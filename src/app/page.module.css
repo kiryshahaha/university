@@ -6,7 +6,6 @@
   overflow: hidden;
 }
 
-/* Добавьте эти стили для центрирования About */
 .aboutContainer {
   flex: 1;
   display: flex;

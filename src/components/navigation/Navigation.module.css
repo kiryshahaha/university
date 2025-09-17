@@ -6,7 +6,6 @@
     justify-content: center;
     align-items: center;
     width: 100%;
-    /* padding-block: 25px; */
     user-select: none;
     height: 80px;
 }
@@ -45,12 +44,11 @@
 }
 
 .active {
-  color: #FFFFFF; /* цвет активной ссылки */
+  color: #FFFFFF; 
   font-weight: bold;
   border-bottom: none;
 }
 
-/* Увеличиваем размер иконок */
 .navConnect img {
     width: 32px;
     height: 32px;

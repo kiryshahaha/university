@@ -9,7 +9,9 @@ const subjectNames = {
 }
 
 export default function LabPage({ params }) {
-  const { subjectId, labId } = params
+  const [subjectId, labId] = React.useMemo(() => {
+    return [params.subjectId, params.labId]
+  }, [params])
   const labKey = `${subjectId}-${labId}`
   
   const LabComponent = labComponents[labKey]
