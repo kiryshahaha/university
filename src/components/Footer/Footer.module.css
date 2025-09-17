@@ -1,0 +1,27 @@
+.footer{
+  display: flex;
+  flex-direction: column;
+  width: 100dvw;
+  margin-bottom: 5dvh;
+  user-select: none;
+}
+
+.footerIcons{
+  display: flex;
+  flex-direction: row;
+  width: 90dvw;
+  justify-content: space-between;
+  margin-inline: 5dvw;
+}
+
+.footerIcon{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footerIconText{
+  color: var(--navbar-text-color);
+  font-family: var(--font-IBM);
+  font-size: 1.5rem;
+}
