@@ -1,8 +1,16 @@
 .container{
   display: flex;
-  position: relative;
   flex-direction: column;
-  height: 100dvh;
+  height: calc(100dvh - 80px);
   justify-content: space-between;
+  overflow: hidden;
 }
 
+/* Добавьте эти стили для центрирования About */
+.aboutContainer {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}

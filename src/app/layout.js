@@ -1,5 +1,6 @@
 import { Inter, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
+import Navigation from "@/components/navigation/Navigation";
 
 const InterFont = Inter({
   variable: "--font-inter",
@@ -18,9 +19,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="ru">
       <body className={`${InterFont.variable} ${IBMFont.variable}`}>
-        {children}
+        <Navigation />
+        <main>{children}</main>
       </body>
     </html>
   );
