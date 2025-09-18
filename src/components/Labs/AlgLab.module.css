@@ -236,7 +236,6 @@
     font-weight: 500;
 }
 
-/* Анимации */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -254,7 +253,6 @@
     animation: fadeIn 0.5s ease-out;
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
     .container {
         padding: 20px;

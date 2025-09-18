@@ -14,7 +14,7 @@ const IBMFont = IBM_Plex_Sans({
 
 export const metadata = {
   title: "Лабораторные Кирюшки",
-  description: "Интеллектуальная собственность Энгельгардта Кирилла",
+  description: "Интеллектуальная собственность Энгельгардта Кирилла Антониевича",
 };
 
 export default function RootLayout({ children }) {

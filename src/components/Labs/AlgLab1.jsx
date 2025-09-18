@@ -62,7 +62,7 @@ const AlgLab1 = () => {
     };
 
     const getEvenCount = () => {
-        setResult(`Количество четных элементов: ${evenCount}\nВыполнено операций: 1\nСложность алгоритма: O(1)`);
+        setResult(`Количество четных элементов: ${evenCount}\nСложность алгоритма: O(1)`);
         setShowResult(true);
     };
 
