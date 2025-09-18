@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import Image from 'next/image'
 import styles from './AlgLab.module.css'
 import TableLab1 from './TableLab1/TableLab1'
+import { generateArray, calculateNegativeSum, getEvenCount } from '@/scripts/lab1/lab1script'
 
 const AlgLab1 = () => {
     const [n, setN] = useState(10);
@@ -15,54 +16,31 @@ const AlgLab1 = () => {
     const [showResult, setShowResult] = useState(false);
     const [result, setResult] = useState('');
 
-    const fillArray = () => {
-        if (n <= 0) {
-            alert('Размер массива должен быть положительным!')
-            return
+    const handleFillArray = () => {
+        try {
+            const { array: newArray, minRange: minR, maxRange: maxR, evenCount: evenCounter } = generateArray(n);
+            
+            setMinRange(minR);
+            setMaxRange(maxR);
+            setArray(newArray);
+            setEvenCount(evenCounter);
+            setShowArrayInfo(true);
+            setShowResult(false);
+            setResult('');
+        } catch (error) {
+            alert(error.message);
         }
-
-        const maxR = Math.floor(n / 2);
-        const minR = -(maxR - 1);
-
-        setMinRange(minR);
-        setMaxRange(maxR);
-
-        const newArray = [];
-        let evenCounter = 0;
-
-        for (let i = 0; i < n; i++) {
-            const randomValue = Math.floor(Math.random() * (maxR - minR + 1)) + minR;
-            newArray.push(randomValue);
-
-            if (randomValue % 2 === 0) {
-                evenCounter++;
-            }
-        }
-
-        setArray(newArray);
-        setEvenCount(evenCounter);
-        setShowArrayInfo(true);
-        setShowResult(false);
-        setResult('');
     };
 
-    const calculateNegativeSum = () => {
-        let sum = 0;
-        let operations = 0;
-
-        for (let i = 0; i < array.length; i++) {
-            operations++;
-            if (array[i] < 0) {
-                sum += array[i];
-            }
-        }
-
-        setResult(`Сумма отрицательных элементов: ${sum}\nВыполнено операций: ${operations}\nСложность алгоритма: O(n)`);
+    const handleCalculateNegativeSum = () => {
+        const { sum, operations, complexity } = calculateNegativeSum(array);
+        setResult(`Сумма отрицательных элементов: ${sum}\nВыполнено операций: ${operations}\nСложность алгоритма: ${complexity}`);
         setShowResult(true);
     };
 
-    const getEvenCount = () => {
-        setResult(`Количество четных элементов: ${evenCount}\nСложность алгоритма: O(1)`);
+    const handleGetEvenCount = () => {
+        const { count, operations, complexity } = getEvenCount(evenCount);
+        setResult(`Количество четных элементов: ${count}\nВыполнено операций: ${operations}\nСложность алгоритма: ${complexity}`);
         setShowResult(true);
     };
 
@@ -109,7 +87,7 @@ const AlgLab1 = () => {
                                 min="1"
                             />
                         </div>
-                        <button className={styles.buttonFillArray} onClick={fillArray}>
+                        <button className={styles.buttonFillArray} onClick={handleFillArray}>
                             Заполнить массив
                         </button>
                     </div>
@@ -130,10 +108,10 @@ const AlgLab1 = () => {
 
                             <div className={styles.buttonGroup}>
                                 <span>Выберите действие:</span>
-                                <button className={styles.actionButton} onClick={calculateNegativeSum}>
+                                <button className={styles.actionButton} onClick={handleCalculateNegativeSum}>
                                     ∑ Отрицательные элементы
                                 </button>
-                                <button className={styles.actionButton} onClick={getEvenCount}>
+                                <button className={styles.actionButton} onClick={handleGetEvenCount}>
                                     🔢 Четные элементы
                                 </button>
                             </div>
