@@ -8,9 +8,9 @@ const AlgLab2 = () => {
 
     const [inputValue, setInputValue] = useState('');
     const [searchValue, setSearchValue] = useState('');
-    const [originalList, setOriginalList] = useState([]);
-    const [beforeList, setBeforeList] = useState([]);
-    const [afterList, setAfterList] = useState([]);
+    const [originalList, setOriginalList] = useState(new DoubleLL());
+    const [beforeList, setBeforeList] = useState(new DoubleLL());
+    const [afterList, setAfterList] = useState(new DoubleLL());
     const [showResult, setShowResult] = useState(false);
     const [list] = useState(new DoubleLL());
 
@@ -18,11 +18,16 @@ const AlgLab2 = () => {
     const handleGenerateList = () => {
         try {
             const randomList = generateUniqueSequence(8, 1, 50);
-
+            
+            //копируем элементы из сгенерированного списка в основной список
             list.clear();
-
-            randomList.forEach(num => list.insertLast(num));
-            setOriginalList(list.toArray());
+            let current = randomList.head;
+            while(current !== null){
+                list.insertLast(current.value);
+                current = current.next;
+            }
+            
+            setOriginalList(copyList(list));
             setShowResult(false);
         } catch(error) {
             alert('Ошибка генерации: ' + error.message);
@@ -36,7 +41,7 @@ const AlgLab2 = () => {
 
         testData.forEach(num => list.insertLast(num));
 
-        setOriginalList(list.toArray());
+        setOriginalList(copyList(list));
         setShowResult(false);
     }
 
@@ -61,7 +66,7 @@ const AlgLab2 = () => {
         try{
             list.insertLast(num);
 
-            setOriginalList(list.toArray());
+            setOriginalList(copyList(list));
             setInputValue('');
             setShowResult(false);
         } catch (error){
@@ -88,7 +93,7 @@ const AlgLab2 = () => {
             return;
         }
 
-        setOriginalList(list.toArray());
+        setOriginalList(copyList(list));
         setInputValue('');
         setShowResult(false);
     };
@@ -106,13 +111,13 @@ const AlgLab2 = () => {
             return;
         }
 
-        if (list.length === 0){
+        if (list.getLength() === 0){
             alert('Список пуст!');
             return;
         }
 
         try{
-            const result = processSequence(list.toArray(), c);
+            const result = processSequence(list, c);
 
             setBeforeList(result.beforeReverse);
             setAfterList(result.after);
@@ -125,12 +130,23 @@ const AlgLab2 = () => {
 
     const handleClearAll = () => {
         list.clear();
-        setOriginalList([]);
-        setBeforeList([]);
-        setAfterList([]);
+        setOriginalList(new DoubleLL());
+        setBeforeList(new DoubleLL());
+        setAfterList(new DoubleLL());
         setShowResult(false);
         setInputValue('');
         setSearchValue('');
+    };
+
+    //вспомогательная функция для копирования списка
+    const copyList = (sourceList) => {
+        const newList = new DoubleLL();
+        let current = sourceList.head;
+        while(current !== null){
+            newList.insertLast(current.value);
+            current = current.next;
+        }
+        return newList;
     };
 
     return (
@@ -196,13 +212,13 @@ const AlgLab2 = () => {
                     </div>
 
                     {/*Отображение исходного списка*/}
-                    {originalList.length > 0 && (
+                    {!originalList.isEmpty() && (
                         <div className={styles.arrayInfo}>
                             <div className={styles.arrayDisplay}>
-                                <strong>Исходная последовательность: </strong>[{originalList.join(', ')}]
+                                <strong>Исходная последовательность: </strong>{originalList.toString()}
                             </div>
                             <div>
-                                <strong>Количество элементов: </strong>{originalList.length}
+                                <strong>Количество элементов: </strong>{originalList.getLength()}
                             </div>
                         </div>
                     )}
@@ -212,10 +228,12 @@ const AlgLab2 = () => {
                             <span className={styles.resultext}>Результаты обработки</span>
                             <div className={styles.arrayInfo}>
                                 <div className={styles.arrayDisplay}>
-                                    <strong>Числа до {searchValue} (в обратном порядке): </strong><br />{beforeList.length > 0 ? `[${beforeList.join(', ')}]` : `Нет элементов`}
+                                    <strong>Числа до {searchValue} (в обратном порядке): </strong><br />
+                                    {!beforeList.isEmpty() ? beforeList.toString() : `Нет элементов`}
                                 </div>
                                 <div className={styles.arrayDisplay}>
-                                    <strong>Числа после {searchValue} (в прямом порядке): </strong><br />{afterList.length > 0 ? `[${afterList.join(', ')}]` : `Нет элементов`}
+                                    <strong>Числа после {searchValue} (в прямом порядке): </strong><br />
+                                    {!afterList.isEmpty() ? afterList.toString() : `Нет элементов`}
                                 </div>
                             </div>
                         </div>

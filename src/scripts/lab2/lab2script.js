@@ -14,7 +14,7 @@ class DoubleLL {
         this.length = 0;
     }
 
-    //добавление элемента в концел листа
+    //добавление элемента в конец списка
     insertLast(value){
         let node = new DoublLLNode(value);
 
@@ -79,63 +79,83 @@ class DoubleLL {
         return null;
     }
 
-    //преобразования в массив для вывода
-    toArray(){
-        const result = [];
-        let current = this.head;
-
-        while(current != null){
-            result.push(current.value);
-            current = current.next
-        }
-
-        return result
-    }
-
     //получение элементов до указанного значение в обратном порядке
     getBeforeReverse(targetValue){
-        const result = [];
+        const resultList = new DoubleLL();
         let current = this.head;
 
         while (current !== null && current.value !== targetValue){
-            result.push(current.value);
+            //вставляем в начало для обратного порядка
+            this.insertFirstInList(resultList, current.value);
             current = current.next;
         }
 
-        return result.reverse();
+        return resultList;
     }
 
     //получение элементов после указанного значения
     getAfter(targetValue){
-        const result = [];
+        const resultList = new DoubleLL();
         let current = this.head;
         let found = false;
 
         while(current !== null){
             if(found){
-                result.push(current.value);
+                resultList.insertLast(current.value);
             } else if(current.value === targetValue){
-                found = true
+                found = true;
             }
             current = current.next;
         }
-        return result;
+        return resultList;
     }
 
-    getIndex(value){
+    //вспомогательный метод для вставки в начало (для обратного порядка)
+    insertFirstInList(list, value){
+        let node = new DoublLLNode(value);
+
+        if (list.length === 0){
+            list.head = node;
+            list.tail = node;
+        } else {
+            node.next = list.head;
+            list.head.prev = node;
+            list.head = node;
+        }
+
+        list.length++;
+        return node;
+    }
+
+    //преобразование в строку для вывода в интерфейс
+    toString(){
+        let result = '';
         let current = this.head;
-        let index = 0;
+        let first = true;
 
-        while(current !== null){
-            if(current.value === value){
-                return index;
+        while(current != null){
+            if(!first){
+                result += ', ';
             }
+            result += current.value;
             current = current.next;
-            index++;
+            first = false;
         }
-        return -1;
+
+        return `[${result}]`;
     }
 
+    //получение длины списка
+    getLength(){
+        return this.length;
+    }
+
+    //проверка на пустоту
+    isEmpty(){
+        return this.length === 0;
+    }
+
+    //очистка списка
     clear(){
         this.head = null;
         this.tail = null;
@@ -146,11 +166,7 @@ class DoubleLL {
 //Функции
 
 //основная функция программы
-export const processSequence = (sequence, targetValue) => {
-    const list = new DoubleLL();
-
-    sequence.forEach(value => list.insertLast(value));
-
+export const processSequence = (list, targetValue) => {
     if(list.findElement(targetValue) === null){
         throw new Error(`Число ${targetValue} не найдено в последовательности`);
     };
@@ -170,24 +186,30 @@ export const generateUniqueSequence = (n, min = 1, max = 100) => {
         throw new Error(`Невозможно создать последовательность: диапазон слишком мал`);
     }
 
-    const sequence = [];
+    const list = new DoubleLL();
     const used = new Set();
 
-    while(sequence.length < n){
+    while(list.getLength() < n){
         const randomValue = Math.floor(Math.random() * (max - min + 1)) + min;
         if(!used.has(randomValue)){
-            sequence.push(randomValue);
+            list.insertLast(randomValue);
             used.add(randomValue);
         }
     }
-    return sequence;
+    return list;
 };
 
 //валидация последовательности
-export const validateSequence = (sequence) => {
-    const set = new Set(sequence);
-    if (set.size !== sequence.length){
-        throw new Error('Последователоность содержит повторяющиеся элементы');
+export const validateSequence = (list) => {
+    const set = new Set();
+    let current = list.head;
+
+    while(current !== null){
+        if(set.has(current.value)){
+            throw new Error('Последовательность содержит повторяющиеся элементы');
+        }
+        set.add(current.value);
+        current = current.next;
     }
     return true;
 }
