@@ -245,19 +245,19 @@ class SystemModel {
     }
 
     // Получить текущее состояние системы
-    getSystemState() {
-        return {
-            time: this.time,
-            processor: this.processor ? this.processor.id : "Free",
-            stack: this.stack.toString(),
-            queues: {
-                F0: this.queues[0].toString(),
-                F1: this.queues[1].toString(),
-                F2: this.queues[2].toString()
-            },
-            completedTasks: this.completedTasks.length
-        };
-    }
+getSystemState() {
+    return {
+        time: this.time,
+        processor: this.processor ? `Задача ${this.processor.id}` : "Free", // Всегда возвращаем строку
+        stack: this.stack.toString(),
+        queues: {
+            F0: this.queues[0].toString(),
+            F1: this.queues[1].toString(),
+            F2: this.queues[2].toString()
+        },
+        completedTasks: this.completedTasks.length
+    };
+}
 
     // Автоматический генератор задач
     generateRandomTask() {

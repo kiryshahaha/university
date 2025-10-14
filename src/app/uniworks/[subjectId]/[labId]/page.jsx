@@ -8,10 +8,9 @@ const subjectNames = {
   3: 'Информатика'
 }
 
-export default function LabPage({ params }) {
-  const [subjectId, labId] = React.useMemo(() => {
-    return [params.subjectId, params.labId]
-  }, [params])
+export default async function LabPage({ params }) {
+  // Ожидаем параметры
+  const { subjectId, labId } = await params
   const labKey = `${subjectId}-${labId}`
   
   const LabComponent = labComponents[labKey]
@@ -29,7 +28,6 @@ export default function LabPage({ params }) {
 
   return (
     <div className={styles.container}>
-      {/* <h1 className={styles.title}>{labTitle}</h1> */}
       <div className={styles.content}>
         <LabComponent />
       </div>
