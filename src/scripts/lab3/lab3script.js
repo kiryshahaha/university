@@ -1,283 +1,234 @@
-// Класс задачи
-class Task {
-    constructor(id, arrivalTime, priority, duration) {
-        this.id = id;
-        this.arrivalTime = arrivalTime;
-        this.priority = priority; // 0 - высший, 1 - средний, 2 - низший
-        this.duration = duration;
-        this.remainingTime = duration;
-        this.startTime = null;
-        this.endTime = null;
+/**
+ * статический стек 
+ */
+export class StaticStack {
+  constructor(maxSize) {
+    this.maxSize = maxSize;
+    this.stack = [];
+  }
+
+  push(value) {
+    if (this.isFull()) {
+      return false; // Нельзя добавить, стек полный
     }
+    this.stack.push(value);
+    return true;
+  }
+
+  pop() {
+    return this.stack.pop();
+  }
+
+  peek() {
+    return this.stack.at(-1);
+  }
+
+  size() {
+    return this.stack.length;
+  }
+
+  isEmpty() {
+    return this.stack.length === 0;
+  }
+
+  isFull() {
+    return this.stack.length >= this.maxSize;
+  }
+
+  clear() {
+    this.stack = [];
+  }
 }
 
-// Статический стек (фиксированного размера)
-class StaticStack {
-    constructor(size) {
-        this.size = size;
-        this.items = Array(size).fill(null);
-        this.top = -1;
-    }
+/**
+ * динамическая очередь 
+ */
+export class DynamicQueue {
+  constructor() {
+    this.queue = [];
+  }
 
-    push(task) {
-        if (this.isFull()) {
-            throw new Error("Stack overflow: невозможно сохранить прерванную задачу");
-        }
-        this.top++;
-        this.items[this.top] = task;
-        return true;
-    }
+  enqueue(value) {
+    this.queue.push(value);
+    return this.queue;
+  }
 
-    pop() {
-        if (this.isEmpty()) {
-            return null;
-        }
-        const task = this.items[this.top];
-        this.items[this.top] = null;
-        this.top--;
-        return task;
-    }
+  dequeue() {
+    return this.queue.shift();
+  }
 
-    peek() {
-        if (this.isEmpty()) {
-            return null;
-        }
-        return this.items[this.top];
-    }
+  peek() {
+    return this.queue[0];
+  }
 
-    isEmpty() {
-        return this.top === -1;
-    }
+  isEmpty() {
+    return this.queue.length === 0;
+  }
 
-    isFull() {
-        return this.top === this.size - 1;
-    }
+  size() {
+    return this.queue.length;
+  }
 
-    toString() {
-        if (this.isEmpty()) return "Empty";
-        return `[${this.items.slice(0, this.top + 1).map(task => task.id).join(", ")}]`;
-    }
+  clear() {
+    this.queue = [];
+  }
 }
 
-// Динамическая очередь (на основе связного списка)
-class QueueNode {
-    constructor(task) {
-        this.task = task;
-        this.next = null;
-    }
+export class Task {
+  static nextId = 1;
+  constructor(priority, duration) {
+    this.id = Task.nextId++; //уникальный id для каждой задачи (для визуализации фифы)
+    this.priority = priority; // 0 (F0), 1 (F1), 2 (F2)
+    this.duration = duration; // время выполнения в тактах
+    this.remainingTime = duration; //оставшееся время
+    this.arrivalTime = 0; // время поступления
+  }
 }
 
-class DynamicQueue {
-    constructor() {
-        this.head = null;
-        this.tail = null;
-        this.length = 0;
+export class Processor {
+  constructor(name) {
+    this.name = name;
+    this.currentTask = null; //текущая задача (если свободен - null)
+    this.isInterrupted = false; //флаг прерывания
+  }
+
+  isFree() {
+    return this.currentTask === null; //проверка на простой
+  }
+
+  assignTask(task) {
+    this.currentTask = task; //назначаем задачу 
+    this.isInterrupted = false; //сбрасываем флаг прерывания
+  }
+
+  interrupt() {
+    if (this.currentTask && !this.isInterrupted) {
+      this.isInterrupted = true;
+      return this.currentTask;
+    }
+    return null;
+  }
+
+  tick() {
+    if (!this.currentTask) {
+      return null; //нет задачи - ничего не происходит 
     }
 
-    enqueue(task) {
-        const newNode = new QueueNode(task);
-        
-        if (this.isEmpty()) {
-            this.head = newNode;
-            this.tail = newNode;
-        } else {
-            this.tail.next = newNode;
-            this.tail = newNode;
-        }
-        this.length++;
-        return true;
+    this.currentTask.remainingTime--; //--время
+    
+    if (this.currentTask.remainingTime <= 0) {
+      const completedTask = this.currentTask;
+      this.currentTask = null;
+      this.isInterrupted = false;
+      return completedTask;
     }
+    
+    return null;
+  }
 
-    dequeue() {
-        if (this.isEmpty()) {
-            return null;
-        }
-        
-        const task = this.head.task;
-        this.head = this.head.next;
-        
-        if (this.head === null) {
-            this.tail = null;
-        }
-        
-        this.length--;
-        return task;
-    }
-
-    peek() {
-        if (this.isEmpty()) {
-            return null;
-        }
-        return this.head.task;
-    }
-
-    isEmpty() {
-        return this.head === null;
-    }
-
-    toString() {
-        if (this.isEmpty()) return "Empty";
-        
-        let result = "";
-        let current = this.head;
-        let first = true;
-        
-        while (current !== null) {
-            if (!first) {
-                result += ", ";
-            }
-            result += current.task.id;
-            current = current.next;
-            first = false;
-        }
-        
-        return `[${result}]`;
-    }
-
-    getLength() {
-        return this.length;
-    }
+  clear() {
+    this.currentTask = null;
+    this.isInterrupted = false;
+  }
 }
 
-// Основной класс системы
-class SystemModel {
-    constructor(stackSize = 1) {
-        this.processor = null;
-        this.stack = new StaticStack(stackSize);
-        this.queues = [new DynamicQueue(), new DynamicQueue(), new DynamicQueue()]; // F0, F1, F2
-        this.time = 0;
-        this.completedTasks = [];
-        this.taskIdCounter = 1;
+export class SystemModel {
+  constructor(stackSize = 1) {
+    this.processor = new Processor("P");
+    this.queues = [
+      new DynamicQueue(), // F0 (высший приоритет)
+      new DynamicQueue(), // F1 (средний приоритет)
+      new DynamicQueue()  // F2 (низший приоритет)
+    ];
+    this.stack = new StaticStack(stackSize);
+    this.time = 0;
+    this.completedTasks = [];
+  }
+
+  addTask(priority, duration) {
+    const task = new Task(priority, duration);
+    task.arrivalTime = this.time; //время поступления
+    this.queues[priority].enqueue(task); //добавляем в очередь по приоритету
+    return task;
+  }
+
+  addRandomTask() {
+    const priority = Math.floor(Math.random() * 3); // 0, 1 или 2
+    const duration = Math.floor(Math.random() * 5) + 1; // 1-5 тактов
+    return this.addTask(priority, duration);
+  }
+
+  executeTick() {
+    this.time++; //1 такт времени
+    
+    // обработка прерываний - проверяем, есть ли задачи с более высоким приоритетом
+    if (!this.processor.isFree()) {
+      const currentPriority = this.processor.currentTask.priority;
+      
+      // ищем задачу с более высоким приоритетом (с меньшим номером)
+      for (let i = 0; i < currentPriority; i++) {
+        //нашли
+        if (!this.queues[i].isEmpty()) {
+          // прерываем текущую задачу и помещаем в стек
+          const interruptedTask = this.processor.interrupt();
+          if (interruptedTask && this.stack.push(interruptedTask)) {
+            // берем задачу с более высоким приоритетом
+            const highPriorityTask = this.queues[i].dequeue();
+            this.processor.assignTask(highPriorityTask);
+          }
+          break;
+        }
+      }
     }
 
-    // Добавление задачи
-    addTask(arrivalTime, priority, duration) {
-        const task = new Task(this.taskIdCounter++, arrivalTime, priority, duration);
-        return task;
+    // если процессор свободен - ищем задачу в очередях по приоритету
+    if (this.processor.isFree()) {
+      for (let i = 0; i < 3; i++) {
+        if (!this.queues[i].isEmpty()) {
+          const task = this.queues[i].dequeue();
+          this.processor.assignTask(task);
+          break; //только первая найденная (если в F1 нашли - в F2 не проверяем)
+        }
+      }
     }
 
-    // Получить задачу для выполнения (согласно приоритету)
-    getNextTask() {
-        for (let i = 0; i < 3; i++) {
-            if (!this.queues[i].isEmpty()) {
-                return this.queues[i].dequeue();
-            }
-        }
-        return null;
+    // такт процессора
+    const completedTask = this.processor.tick();
+    if (completedTask) {
+      this.completedTasks.push(completedTask);
     }
 
-    // Проверить, есть ли задачи с более высоким приоритетом
-    hasHigherPriorityTask(currentPriority) {
-        for (let i = 0; i < currentPriority; i++) {
-            if (!this.queues[i].isEmpty()) {
-                return true;
-            }
-        }
-        return false;
+    // если процессор свободен - достаем задачу из стека
+    if (this.processor.isFree() && !this.stack.isEmpty()) {
+      const taskFromStack = this.stack.pop();
+      this.processor.assignTask(taskFromStack);
     }
 
-    // Выполнить один такт системы
-    executeTick() {
-        const state = {
-            time: this.time,
-            processor: this.processor,
-            stack: this.stack.toString(),
-            queues: this.queues.map(queue => queue.toString()),
-            completedTasks: [...this.completedTasks],
-            events: []
-        };
-
-        // 1. Проверка прерывания
-        if (this.processor !== null) {
-            const currentPriority = this.processor.priority;
-            
-            if (this.hasHigherPriorityTask(currentPriority)) {
-                if (!this.stack.isFull()) {
-                    // Прерываем текущую задачу
-                    state.events.push(`Задача ${this.processor.id} прервана и помещена в стек`);
-                    this.stack.push(this.processor);
-                    this.processor = null;
-                } else {
-                    state.events.push(`Невозможно прервать задачу ${this.processor.id} - стек переполнен`);
-                }
-            }
-        }
-
-        // 2. Если процессор свободен - занять его
-        if (this.processor === null) {
-            // Сначала проверяем стек
-            if (!this.stack.isEmpty()) {
-                this.processor = this.stack.pop();
-                state.events.push(`Задача ${this.processor.id} восстановлена из стека`);
-            } else {
-                // Ищем задачу в очередях
-                const nextTask = this.getNextTask();
-                if (nextTask !== null) {
-                    this.processor = nextTask;
-                    state.events.push(`Задача ${this.processor.id} начала выполнение`);
-                }
-            }
-        }
-
-        // 3. Выполнение текущей задачи
-        if (this.processor !== null) {
-            this.processor.remainingTime--;
-            
-            if (this.processor.remainingTime === 0) {
-                this.processor.endTime = this.time;
-                this.completedTasks.push(this.processor);
-                state.events.push(`Задача ${this.processor.id} завершена`);
-                this.processor = null;
-            }
-        }
-
-        this.time++;
-        return state;
-    }
-
-    // Добавить задачу в соответствующую очередь
-    addTaskToQueue(task) {
-        if (task.priority >= 0 && task.priority <= 2) {
-            this.queues[task.priority].enqueue(task);
-            return true;
-        }
-        return false;
-    }
-
-    // Получить текущее состояние системы
-getSystemState() {
     return {
-        time: this.time,
-        processor: this.processor ? `Задача ${this.processor.id}` : "Free", // Всегда возвращаем строку
-        stack: this.stack.toString(),
-        queues: {
-            F0: this.queues[0].toString(),
-            F1: this.queues[1].toString(),
-            F2: this.queues[2].toString()
-        },
-        completedTasks: this.completedTasks.length
+      time: this.time,
+      processor: this.processor.currentTask,
+      queues: this.queues.map(queue => [...queue.queue]),
+      stack: [...this.stack.stack],
+      completed: this.completedTasks.length
     };
+  }
+
+  reset() {
+    this.processor.clear();
+    this.queues.forEach(queue => queue.clear());
+    this.stack.clear();
+    this.time = 0;
+    this.completedTasks = [];
+  }
+
+  getState() {
+    return {
+      time: this.time,
+      processor: this.processor.currentTask,
+      queues: this.queues.map(queue => [...queue.queue]),
+      stack: [...this.stack.stack],
+      completed: this.completedTasks.length,
+      isProcessorInterrupted: this.processor.isInterrupted
+    };
+  }
 }
-
-    // Автоматический генератор задач
-    generateRandomTask() {
-        const priority = Math.floor(Math.random() * 3);
-        const duration = Math.floor(Math.random() * 5) + 1; // 1-5 тактов
-        const task = this.addTask(this.time, priority, duration);
-        this.addTaskToQueue(task);
-        return task;
-    }
-
-    // Сброс системы
-    reset() {
-        this.processor = null;
-        this.stack = new StaticStack(this.stack.size);
-        this.queues = [new DynamicQueue(), new DynamicQueue(), new DynamicQueue()];
-        this.time = 0;
-        this.completedTasks = [];
-        this.taskIdCounter = 1;
-    }
-}
-
-// Экспорты
-export { Task, StaticStack, DynamicQueue, SystemModel };
