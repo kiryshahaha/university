@@ -726,3 +726,95 @@
     border-top-color: #2d3748;
     margin-bottom: -5px;
 }
+
+.systemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px 15px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+}
+
+.systemInfo span {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.systemInfo strong {
+  color: #667eea;
+}
+
+/* Стили для позиции в стеке */
+.stackPosition {
+  position: absolute;
+  top: 5px;
+  left: 8px;
+  font-size: 0.7rem;
+  background: rgba(255, 255, 255, 0.3);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+}
+
+/* Информация о стеке */
+.stackInfo {
+  text-align: center;
+  color: #48bb78;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 10px;
+  padding: 5px;
+  background: rgba(72, 187, 120, 0.1);
+  border-radius: 5px;
+}
+
+.stackWarning {
+  text-align: center;
+  color: #e53e3e;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin-top: 10px;
+  padding: 5px;
+  background: rgba(229, 62, 62, 0.1);
+  border-radius: 5px;
+  animation: blink 1s infinite;
+}
+
+/* Улучшенные стили для задач с приоритетами */
+.task.priority-0 {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+}
+
+.task.priority-1 {
+  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+}
+
+.task.priority-2 {
+  background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+  box-shadow: 0 2px 8px rgba(237, 137, 54, 0.3);
+}
+
+.task.interrupted {
+  background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
+  box-shadow: 0 2px 8px rgba(159, 122, 234, 0.3);
+}
+
+/* Адаптивность для нового контента */
+@media (max-width: 768px) {
+  .systemInfo {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .systemInfo span {
+    flex: 1;
+    min-width: 150px;
+  }
+}

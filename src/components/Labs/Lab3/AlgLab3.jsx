@@ -5,10 +5,11 @@ import styles from './AlgLab3.module.css'
 import { SystemModel } from '@/scripts/lab3/lab3script'
 
 const AlgLab3 = () => {
-  const [system] = useState(() => new SystemModel(1));
+  const [system, setSystem] = useState(() => new SystemModel(1));
   const [systemState, setSystemState] = useState(null);
   const [priority, setPriority] = useState('0');
   const [duration, setDuration] = useState('');
+  const [stackSize, setStackSize] = useState(1);
   const [isAutoMode, setIsAutoMode] = useState(false);
   const autoIntervalRef = useRef(null);
 
@@ -21,6 +22,22 @@ const AlgLab3 = () => {
       }
     };
   }, [system]);
+
+  // Функция для изменения размера стека
+  const handleStackSizeChange = (newSize) => {
+    if (newSize >= 1 && newSize <= 10) { // Ограничим разумными значениями
+      const newSystem = new SystemModel(newSize);
+      
+      // Сохраняем текущее состояние (если есть)
+      if (systemState) {
+        // Можно добавить логику миграции состояния при необходимости
+      }
+      
+      setSystem(newSystem);
+      setSystemState(newSystem.getState());
+      setStackSize(newSize);
+    }
+  };
 
   const handleAddTask = () => {
     if (duration && !isNaN(duration) && parseInt(duration) > 0) {
@@ -93,6 +110,28 @@ const AlgLab3 = () => {
             <span>Управление системой</span>
           </div>
 
+          {/* Блок настройки системы */}
+          <div className={styles.inputGroup}>
+            <div className={styles.taskInput}>
+              <label>Размер стека: </label>
+              <select 
+                value={stackSize} 
+                onChange={(e) => handleStackSizeChange(parseInt(e.target.value))}
+              >
+                <option value="1">1 задача</option>
+                <option value="2">2 задачи</option>
+                <option value="3">3 задачи</option>
+                <option value="5">5 задач</option>
+                <option value="10">10 задач</option>
+              </select>
+            </div>
+            
+            <div className={styles.systemInfo}>
+              <span>Текущий размер стека: <strong>{stackSize}</strong></span>
+              <span>Стек заполнен: <strong>{systemState.stack.length}/{stackSize}</strong></span>
+            </div>
+          </div>
+
           {/* Блок добавления задач */}
           <div className={styles.inputGroup}>
             <div className={styles.taskInput}>
@@ -147,8 +186,10 @@ const AlgLab3 = () => {
               <h3>Процессор (P)</h3>
               <div className={styles.processorContent}>
                 {systemState.processor ? (
-                  <div className={`${styles.task} ${systemState.isProcessorInterrupted ? styles.interrupted : ''}`}>
-                    {formatTaskInfo(systemState.processor)}
+                  <div className={`${styles.task} ${systemState.isProcessorInterrupted ? styles.interrupted : ''} ${styles[`priority-${systemState.processor.priority}`]}`}>
+                    <div className={styles.taskInfo}>
+                      {formatTaskInfo(systemState.processor)}
+                    </div>
                     {systemState.isProcessorInterrupted && <span className={styles.interruptedBadge}>Прервана</span>}
                   </div>
                 ) : (
@@ -160,36 +201,51 @@ const AlgLab3 = () => {
             <div className={styles.queues}>
               <h3>Очереди</h3>
               <div className={styles.queueGroup}>
-                <div className={styles.queue}>
+                <div className={`${styles.queue} ${styles['queue-f0']}`}>
                   <h4>F0 (Высший приоритет)</h4>
                   <div className={styles.queueContent}>
                     {systemState.queues[0].map(task => (
-                      <div key={task.id} className={styles.task}>
-                        {formatTaskInfo(task)}
+                      <div key={task.id} className={`${styles.task} ${styles[`priority-${task.priority}`]}`}>
+                        <div className={styles.taskInfo}>
+                          {formatTaskInfo(task)}
+                        </div>
                       </div>
                     ))}
+                    {systemState.queues[0].length === 0 && (
+                      <div className={styles.empty}>Пусто</div>
+                    )}
                   </div>
                 </div>
                 
-                <div className={styles.queue}>
+                <div className={`${styles.queue} ${styles['queue-f1']}`}>
                   <h4>F1 (Средний приоритет)</h4>
                   <div className={styles.queueContent}>
                     {systemState.queues[1].map(task => (
-                      <div key={task.id} className={styles.task}>
-                        {formatTaskInfo(task)}
+                      <div key={task.id} className={`${styles.task} ${styles[`priority-${task.priority}`]}`}>
+                        <div className={styles.taskInfo}>
+                          {formatTaskInfo(task)}
+                        </div>
                       </div>
                     ))}
+                    {systemState.queues[1].length === 0 && (
+                      <div className={styles.empty}>Пусто</div>
+                    )}
                   </div>
                 </div>
                 
-                <div className={styles.queue}>
+                <div className={`${styles.queue} ${styles['queue-f2']}`}>
                   <h4>F2 (Низший приоритет)</h4>
                   <div className={styles.queueContent}>
                     {systemState.queues[2].map(task => (
-                      <div key={task.id} className={styles.task}>
-                        {formatTaskInfo(task)}
+                      <div key={task.id} className={`${styles.task} ${styles[`priority-${task.priority}`]}`}>
+                        <div className={styles.taskInfo}>
+                          {formatTaskInfo(task)}
+                        </div>
                       </div>
                     ))}
+                    {systemState.queues[2].length === 0 && (
+                      <div className={styles.empty}>Пусто</div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -197,16 +253,51 @@ const AlgLab3 = () => {
 
             <div className={styles.stack}>
               <h3>Стек (S)</h3>
-              <div className={styles.stackContent}>
-                {systemState.stack.map(task => (
-                  <div key={task.id} className={styles.task}>
-                    {formatTaskInfo(task)}
+              <div className={`${styles.stackContent} ${systemState.stack.length >= stackSize ? styles.full : ''}`}>
+                {systemState.stack.map((task, index) => (
+                  <div key={task.id} className={`${styles.task} ${styles.interrupted}`}>
+                    <div className={styles.taskInfo}>
+                      {formatTaskInfo(task)}
+                    </div>
+                    <div className={styles.stackPosition}>
+                      #{systemState.stack.length - index}
+                    </div>
                   </div>
                 ))}
                 {systemState.stack.length === 0 && (
                   <div className={styles.empty}>Пуст</div>
                 )}
+                {systemState.stack.length > 0 && systemState.stack.length < stackSize && (
+                  <div className={styles.stackInfo}>
+                    Свободно: {stackSize - systemState.stack.length}
+                  </div>
+                )}
+                {systemState.stack.length >= stackSize && (
+                  <div className={styles.stackWarning}>
+                    ⚠️ Стек заполнен!
+                  </div>
+                )}
               </div>
+            </div>
+          </div>
+
+          {/* Статистика системы */}
+          <div className={styles.systemStats}>
+            <div className={styles.statItem}>
+              <div className={styles.statValue}>{systemState.time}</div>
+              <div className={styles.statLabel}>Текущее время</div>
+            </div>
+            <div className={styles.statItem}>
+              <div className={styles.statValue}>{systemState.completed}</div>
+              <div className={styles.statLabel}>Выполнено задач</div>
+            </div>
+            <div className={styles.statItem}>
+              <div className={styles.statValue}>{systemState.queues[0].length + systemState.queues[1].length + systemState.queues[2].length}</div>
+              <div className={styles.statLabel}>В очередях</div>
+            </div>
+            <div className={styles.statItem}>
+              <div className={styles.statValue}>{systemState.stack.length}</div>
+              <div className={styles.statLabel}>В стеке</div>
             </div>
           </div>
 
@@ -217,9 +308,10 @@ const AlgLab3 = () => {
               <strong>Текущее время:</strong> {systemState.time} тактов<br/>
               <strong>Процессор:</strong> 1<br/>
               <strong>Очереди:</strong> F0 (приоритет 0), F1 (приоритет 1), F2 (приоритет 2)<br/>
-              <strong>Стек:</strong> статический, размер = 1<br/>
+              <strong>Стек:</strong> статический, размер = {stackSize}<br/>
               <strong>Очереди:</strong> динамические (без ограничения размера)<br/>
-              <strong>Выполнено задач:</strong> {systemState.completed}
+              <strong>Выполнено задач:</strong> {systemState.completed}<br/>
+              <strong>Задач в стеке:</strong> {systemState.stack.length}/{stackSize}
             </div>
           </div>
         </div>
