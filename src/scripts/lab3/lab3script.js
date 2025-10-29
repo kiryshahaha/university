@@ -9,16 +9,18 @@ export class StaticStack {
 
   push(value) {
     if (this.isFull()) {
-      return false; // Нельзя добавить, стек полный
+      return false; //стек полный
     }
     this.stack.push(value);
     return true;
   }
 
+  //достать последний элемент
   pop() {
     return this.stack.pop();
   }
 
+  //смотрит верхушку
   peek() {
     return this.stack.at(-1);
   }
@@ -48,11 +50,13 @@ export class DynamicQueue {
     this.queue = [];
   }
 
+  //достать из начала
   enqueue(value) {
     this.queue.push(value);
     return this.queue;
   }
 
+  //посмотреть первый элемент
   dequeue() {
     return this.queue.shift();
   }
@@ -78,8 +82,8 @@ export class Task {
   static nextId = 1;
   constructor(priority, duration) {
     this.id = Task.nextId++; //уникальный id для каждой задачи (для визуализации фифы)
-    this.priority = priority; // 0 (F0), 1 (F1), 2 (F2)
-    this.duration = duration; // время выполнения в тактах
+    this.priority = priority; //0 (F0), 1 (F1), 2 (F2)
+    this.duration = duration; //время выполнения в тактах
     this.remainingTime = duration; //оставшееся время
     this.arrivalTime = 0; // время поступления
   }
@@ -88,12 +92,13 @@ export class Task {
 export class Processor {
   constructor(name) {
     this.name = name;
-    this.currentTask = null; //текущая задача (если свободен - null)
+    this.currentTask = null; //текущая задача
     this.isInterrupted = false; //флаг прерывания
   }
 
+  //проверка на простой
   isFree() {
-    return this.currentTask === null; //проверка на простой
+    return this.currentTask === null;
   }
 
   assignTask(task) {
@@ -145,6 +150,7 @@ export class SystemModel {
     this.completedTasks = [];
   }
 
+  //добавление задачи
   addTask(priority, duration) {
     const task = new Task(priority, duration);
     task.arrivalTime = this.time; //время поступления
@@ -158,21 +164,22 @@ export class SystemModel {
     return this.addTask(priority, duration);
   }
 
+  //выполнение одного такта
   executeTick() {
     this.time++; //1 такт времени
     
-    // обработка прерываний - проверяем, есть ли задачи с более высоким приоритетом
+    //обработка прерываний - проверяем, есть ли задачи с более высоким приоритетом
     if (!this.processor.isFree()) {
       const currentPriority = this.processor.currentTask.priority;
       
-      // ищем задачу с более высоким приоритетом (с меньшим номером)
+      //ищем задачу с более высоким приоритетом (с меньшим номером)
       for (let i = 0; i < currentPriority; i++) {
         //нашли
         if (!this.queues[i].isEmpty()) {
-          // прерываем текущую задачу и помещаем в стек
+          //прерываем текущую задачу и помещаем в стек
           const interruptedTask = this.processor.interrupt();
           if (interruptedTask && this.stack.push(interruptedTask)) {
-            // берем задачу с более высоким приоритетом
+            //берем задачу с более высоким приоритетом
             const highPriorityTask = this.queues[i].dequeue();
             this.processor.assignTask(highPriorityTask);
           }
@@ -181,7 +188,7 @@ export class SystemModel {
       }
     }
 
-    // если процессор свободен - ищем задачу в очередях по приоритету
+    //если процессор свободен - ищем задачу в очередях по приоритету
     if (this.processor.isFree()) {
       for (let i = 0; i < 3; i++) {
         if (!this.queues[i].isEmpty()) {
@@ -192,13 +199,13 @@ export class SystemModel {
       }
     }
 
-    // такт процессора
+    //такт процессора
     const completedTask = this.processor.tick();
     if (completedTask) {
       this.completedTasks.push(completedTask);
     }
 
-    // если процессор свободен - достаем задачу из стека
+    //если процессор свободен - достаем задачу из стека
     if (this.processor.isFree() && !this.stack.isEmpty()) {
       const taskFromStack = this.stack.pop();
       this.processor.assignTask(taskFromStack);

@@ -14,7 +14,7 @@ const AlgLab3 = () => {
   const autoIntervalRef = useRef(null);
 
   useEffect(() => {
-    // Инициализация состояния системы
+    //состояние системы
     setSystemState(system.getState());
     return () => {
       if (autoIntervalRef.current) {
@@ -23,14 +23,13 @@ const AlgLab3 = () => {
     };
   }, [system]);
 
-  // Функция для изменения размера стека
+  //функция для изменения размера стека
   const handleStackSizeChange = (newSize) => {
-    if (newSize >= 1 && newSize <= 10) { // Ограничим разумными значениями
+    if (newSize >= 1 && newSize <= 10) {
       const newSystem = new SystemModel(newSize);
       
-      // Сохраняем текущее состояние (если есть)
+      //сохраняем текущее состояние (если есть)
       if (systemState) {
-        // Можно добавить логику миграции состояния при необходимости
       }
       
       setSystem(newSystem);
