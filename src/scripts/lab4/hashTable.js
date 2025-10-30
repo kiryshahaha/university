@@ -3,7 +3,7 @@ export class HashTable {
     this.segments = segments;
     this.table = Array(segments).fill(null).map(() => []);
     this.elementCount = 0;
-    this.MAX_CHAIN_LENGTH = 5; // Максимальная длина цепочки для контроля переполнения
+    this.MAX_CHAIN_LENGTH = 50; // Максимальная длина цепочки для контроля переполнения
   }
 
   // Валидация формата ключа: БццццБ
