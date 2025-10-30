@@ -6,9 +6,12 @@ import { HashTable, createHashTable } from '@/scripts/lab4/hashTable'
 
 const AlgLab4 = () => {
   const [hashTable] = useState(() => createHashTable(1500))
-  const [dataInput, setDataInput] = useState('')
-  const [searchInput, setSearchInput] = useState('')
+  const [keyInput, setKeyInput] = useState('')
+  const [valueInput, setValueInput] = useState('')
+  const [searchKeyInput, setSearchKeyInput] = useState('')
   const [segmentSearch, setSegmentSearch] = useState('')
+  const [textToEncrypt, setTextToEncrypt] = useState('')
+  const [encryptedKey, setEncryptedKey] = useState('')
   const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [lastOperation, setLastOperation] = useState(null)
@@ -23,7 +26,6 @@ const AlgLab4 = () => {
   }, [])
 
   const updateDisplay = () => {
-    // Получаем все 1500 сегментов
     const allItems = []
     for (let i = 0; i < 1500; i++) {
       const segment = hashTable.table[i] || []
@@ -37,25 +39,44 @@ const AlgLab4 = () => {
     setStats(hashTable.getStatistics())
   }
 
-  const handleAddData = () => {
-    if (!dataInput.trim()) {
-      setMessage('Введите данные')
+  // Функция шифрования текста в ключ
+  const encryptTextToKey = () => {
+    if (!textToEncrypt.trim()) {
+      setMessage('Введите текст для шифрования')
+      return
+    }
+
+    try {
+      const key = hashTable.generateKeyFromText(textToEncrypt.trim())
+      setEncryptedKey(key)
+      setMessage(`✅ Текст зашифрован в ключ: ${key}`)
+    } catch (error) {
+      setMessage(`❌ Ошибка шифрования: ${error.message}`)
+    }
+  }
+
+  // Автоматическое добавление значения (значение → автоматический ключ)
+  const handleAddValue = () => {
+    if (!valueInput.trim()) {
+      setMessage('Введите значение для добавления')
       return
     }
 
     setIsLoading(true)
     setTimeout(() => {
       try {
-        const result = hashTable.add(dataInput.trim())
+        // Автоматически генерируем ключ из значения
+        const autoKey = hashTable.generateKeyFromText(valueInput.trim())
+        const result = hashTable.add(autoKey, valueInput.trim())
         setLastOperation(result)
         
         if (result.operation === 'added') {
-          setMessage(`✅ Данные "${dataInput}" → ключ "${result.key}" → сегмент ${result.hash}`)
-        } else if (result.operation === 'exists') {
-          setMessage(`⚠️ Данные "${dataInput}" уже существуют (ключ: "${result.key}")`)
+          setMessage(`✅ Элемент добавлен: значение "${valueInput}" → ключ "${autoKey}" → сегмент ${result.hash}`)
+        } else if (result.operation === 'updated') {
+          setMessage(`✏️ Элемент обновлен: значение "${valueInput}" → ключ "${autoKey}" → сегмент ${result.hash}`)
         }
         
-        setDataInput('')
+        setValueInput('')
         updateDisplay()
       } catch (error) {
         setMessage(`❌ Ошибка: ${error.message}`)
@@ -65,25 +86,69 @@ const AlgLab4 = () => {
     }, 300)
   }
 
-  const handleSearchByData = () => {
-    if (!searchInput.trim()) {
-      setMessage('Введите данные для поиска')
+  // Ручное добавление с указанием ключа
+  const handleAddWithKey = () => {
+    if (!keyInput.trim()) {
+      setMessage('Введите ключ')
+      return
+    }
+    if (!valueInput.trim()) {
+      setMessage('Введите значение')
       return
     }
 
     setIsLoading(true)
     setTimeout(() => {
       try {
-        const result = hashTable.searchByData(searchInput.trim())
+        const result = hashTable.add(keyInput.trim(), valueInput.trim())
+        setLastOperation(result)
+        
+        if (result.operation === 'added') {
+          setMessage(`✅ Элемент добавлен: ключ "${keyInput}" → значение "${valueInput}" → сегмент ${result.hash}`)
+        } else if (result.operation === 'updated') {
+          setMessage(`✏️ Элемент обновлен: ключ "${keyInput}" → значение "${valueInput}" → сегмент ${result.hash}`)
+        }
+        
+        setKeyInput('')
+        setValueInput('')
+        updateDisplay()
+      } catch (error) {
+        setMessage(`❌ Ошибка: ${error.message}`)
+      } finally {
+        setIsLoading(false)
+      }
+    }, 300)
+  }
+
+  // Использовать зашифрованный ключ для добавления
+  const useEncryptedKey = () => {
+    if (!encryptedKey) {
+      setMessage('Сначала зашифруйте текст')
+      return
+    }
+    setKeyInput(encryptedKey)
+    setMessage(`🔑 Ключ "${encryptedKey}" готов к использованию`)
+  }
+
+  const handleSearchByKey = () => {
+    if (!searchKeyInput.trim()) {
+      setMessage('Введите ключ для поиска')
+      return
+    }
+
+    setIsLoading(true)
+    setTimeout(() => {
+      try {
+        const result = hashTable.searchByKey(searchKeyInput.trim())
         if (result.count > 0) {
-          setMessage(`✅ Найдено: данные "${searchInput}" → ключ "${result.key}" → сегмент ${result.hash}`)
+          const values = result.found.map(item => item.value).join(', ')
+          setMessage(`✅ Найдено: ключ "${searchKeyInput}" → сегмент ${result.hash} → значения: ${values}`)
           
-          // Прокручиваем к найденному сегменту
           setTimeout(() => {
             scrollToSegment(result.hash)
           }, 100)
         } else {
-          setMessage(`❌ Не найдено: данные "${searchInput}" → ключ "${result.key}" → сегмент ${result.hash}`)
+          setMessage(`❌ Не найдено: ключ "${searchKeyInput}" → сегмент ${result.hash}`)
         }
       } catch (error) {
         setMessage(`❌ Ошибка поиска: ${error.message}`)
@@ -107,7 +172,6 @@ const AlgLab4 = () => {
         if (result.count > 0) {
           setMessage(`✅ В сегменте ${segment} найдено ${result.count} элементов`)
           
-          // Прокручиваем к запрошенному сегменту
           setTimeout(() => {
             scrollToSegment(segment)
           }, 100)
@@ -124,7 +188,7 @@ const AlgLab4 = () => {
 
   const scrollToSegment = (segment) => {
     if (tableContainerRef.current) {
-      const rowHeight = 40 // примерная высота строки
+      const rowHeight = 40
       const scrollTo = segment * rowHeight
       tableContainerRef.current.scrollTo({
         top: scrollTo,
@@ -133,22 +197,31 @@ const AlgLab4 = () => {
     }
   }
 
-  const handleRemoveData = () => {
-    if (!dataInput.trim()) {
-      setMessage('Введите данные для удаления')
+  const handleRemoveByKey = () => {
+    if (!keyInput.trim()) {
+      setMessage('Введите ключ для удаления')
       return
     }
 
     setIsLoading(true)
     setTimeout(() => {
       try {
-        const result = hashTable.remove(dataInput.trim())
+        const result = hashTable.remove(keyInput.trim())
         if (result.removed > 0) {
-          setMessage(`✅ Данные "${dataInput}" удалены (ключ: ${result.key})`)
-          setDataInput('')
+          setMessage(`✅ Элемент удален: ключ "${keyInput}" → сегмент ${result.hash}. Осталось элементов в сегменте: ${result.remainingCount}`)
+          
+          // Показываем оставшиеся элементы (коллизии)
+          if (result.remainingCount > 0) {
+            setTimeout(() => {
+              const remainingKeys = result.remainingItems.map(item => item.key).join(', ')
+              setMessage(prev => prev + `\n🔗 Оставшиеся ключи в сегменте: ${remainingKeys}`)
+            }, 500)
+          }
+          
+          setKeyInput('')
           updateDisplay()
         } else {
-          setMessage(`❌ Данные "${dataInput}" не найдены`)
+          setMessage(`❌ Элемент не найден: ключ "${keyInput}"`)
         }
       } catch (error) {
         setMessage(`❌ Ошибка удаления: ${error.message}`)
@@ -162,16 +235,16 @@ const AlgLab4 = () => {
     setIsLoading(true)
     setTimeout(() => {
       try {
-        const csvData = hashTable.exportToCSV()
+        const csvData = hashTable.exportForHistogram()
         const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = 'hash_table_data.csv'
+        a.download = 'hash_table_histogram.csv'
         a.click()
         URL.revokeObjectURL(url)
         
-        setMessage('✅ Данные выгружены в файл hash_table_data.csv')
+        setMessage('✅ Данные для гистограммы выгружены в hash_table_histogram.csv')
       } catch (error) {
         setMessage(`❌ Ошибка экспорта: ${error.message}`)
       } finally {
@@ -180,35 +253,32 @@ const AlgLab4 = () => {
     }, 500)
   }
 
-  const handleImportFromFile = (event) => {
-    const file = event.target.files[0]
-    if (!file) return
-
+  const handleBulkGenerate = () => {
     setIsLoading(true)
     setTimeout(() => {
       try {
-        // Демо-импорт
-        hashTable.reset()
-        // Добавляем тестовые данные в разные сегменты
-        const testData = [
-          'Hello World', 'Test Data', 'Hash Table', 'Laboratory Work',
-          'Open Hashing', 'Collision Resolution', 'Data Structure',
-          'Algorithm', 'Programming', 'Computer Science'
-        ]
-        testData.forEach(data => hashTable.add(data))
+        const result = hashTable.bulkAdd(2000) // Генерируем 100 элементов
+        setMessage(`✅ Сгенерировано: добавлено ${result.added}, обновлено ${result.updated}. Ошибок: ${result.errors.length}`)
+        
+        if (result.errors.length > 0) {
+          setTimeout(() => {
+            setMessage(prev => prev + `\n⚠️ Переполнение: ${result.errors[0]}`)
+          }, 500)
+        }
+        
         updateDisplay()
-        setMessage(`✅ Данные загружены из файла ${file.name} (демо)`)
-        setIsLoading(false)
       } catch (error) {
-        setMessage(`❌ Ошибка импорта: ${error.message}`)
+        setMessage(`❌ Ошибка генерации: ${error.message}`)
+      } finally {
         setIsLoading(false)
       }
-    }, 1000)
+    }, 500)
   }
 
   const handleResetTable = () => {
     hashTable.reset()
     setLastOperation(null)
+    setEncryptedKey('')
     setMessage('🗑️ Хеш-таблица сброшена')
     updateDisplay()
   }
@@ -241,13 +311,47 @@ const AlgLab4 = () => {
             <span>Управление хеш-таблицей</span>
           </div>
 
+          {/* Блок шифрования текста */}
+          <div className={styles.inputGroup}>
+            <div className={styles.taskInput}>
+              <label>Шифрование текста в ключ: </label>
+              <input
+                type="text"
+                placeholder="Любой текст для шифрования..."
+                value={textToEncrypt}
+                onChange={(e) => setTextToEncrypt(e.target.value)}
+                onKeyPress={(e) => handleKeyPress(e, encryptTextToKey)}
+              />
+            </div>
+            
+            <button 
+              className={styles.buttonFillArray} 
+              onClick={encryptTextToKey}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Шифрование...' : 'Зашифровать в ключ'}
+            </button>
+
+            {encryptedKey && (
+              <div className={styles.encryptedKey}>
+                <span>Зашифрованный ключ: <strong>{encryptedKey}</strong></span>
+                <button 
+                  className={styles.actionButton}
+                  onClick={useEncryptedKey}
+                >
+                  Использовать
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Информация о последней операции */}
           {lastOperation && (
             <div className={styles.lastOperation}>
               <h3>Последняя операция:</h3>
               <div>Ключ: <strong>{lastOperation.key}</strong></div>
               <div>Сегмент: <strong>{lastOperation.hash}</strong></div>
-              <div>Тип: <strong>{lastOperation.operation === 'added' ? 'Добавление' : 'Уже существует'}</strong></div>
+              <div>Тип: <strong>{lastOperation.operation === 'added' ? 'Добавление' : 'Обновление'}</strong></div>
             </div>
           )}
 
@@ -262,10 +366,6 @@ const AlgLab4 = () => {
               <div className={styles.statLabel}>Занято сегментов</div>
             </div>
             <div className={styles.statItem}>
-              <div className={styles.statValue}>{stats.emptySegments || 0}</div>
-              <div className={styles.statLabel}>Свободно сегментов</div>
-            </div>
-            <div className={styles.statItem}>
               <div className={styles.statValue}>{stats.maxChainLength || 0}</div>
               <div className={styles.statLabel}>Макс. длина цепочки</div>
             </div>
@@ -273,57 +373,88 @@ const AlgLab4 = () => {
               <div className={styles.statValue}>{stats.loadFactor || '0.0'}%</div>
               <div className={styles.statLabel}>Коэф. заполнения</div>
             </div>
+            <div className={styles.statItem}>
+              <div className={styles.statValue}>{stats.overflowSegments || 0}</div>
+              <div className={styles.statLabel}>Переполненные сегменты</div>
+            </div>
           </div>
 
-          {/* Блок добавления/удаления элементов */}
+          {/* Блок добавления элементов */}
           <div className={styles.inputGroup}>
             <div className={styles.taskInput}>
-              <label>Данные: </label>
+              <label>Добавить значение (авто-ключ): </label>
               <input
                 type="text"
-                placeholder="Любые данные..."
-                value={dataInput}
-                onChange={(e) => setDataInput(e.target.value)}
-                onKeyPress={(e) => handleKeyPress(e, handleAddData)}
+                placeholder="Любое значение..."
+                value={valueInput}
+                onChange={(e) => setValueInput(e.target.value)}
+                onKeyPress={(e) => handleKeyPress(e, handleAddValue)}
               />
             </div>
             
             <button 
               className={styles.buttonFillArray} 
-              onClick={handleAddData}
+              onClick={handleAddValue}
               disabled={isLoading}
             >
-              {isLoading ? 'Добавление...' : 'Добавить данные'}
+              {isLoading ? 'Добавление...' : 'Добавить значение'}
             </button>
+          </div>
+
+          {/* Блок ручного добавления с ключом */}
+          <div className={styles.inputGroup}>
+            <div className={styles.taskInput}>
+              <label>Ключ (БццццБ): </label>
+              <input
+                type="text"
+                placeholder="Например: A1234Z"
+                value={keyInput}
+                onChange={(e) => setKeyInput(e.target.value.toUpperCase())}
+                onKeyPress={(e) => handleKeyPress(e, handleAddWithKey)}
+                maxLength={6}
+              />
+            </div>
+            
+            <div className={styles.taskInput}>
+              <label>Значение: </label>
+              <input
+                type="text"
+                placeholder="Любое значение..."
+                value={valueInput}
+                onChange={(e) => setValueInput(e.target.value)}
+                onKeyPress={(e) => handleKeyPress(e, handleAddWithKey)}
+              />
+            </div>
             
             <button 
               className={styles.actionButton} 
-              onClick={handleRemoveData}
+              onClick={handleAddWithKey}
               disabled={isLoading}
             >
-              Удалить данные
+              Добавить с ключом
             </button>
           </div>
 
           {/* Блок поиска */}
           <div className={styles.inputGroup}>
             <div className={styles.taskInput}>
-              <label>Поиск по данным: </label>
+              <label>Поиск по ключу: </label>
               <input
                 type="text"
-                placeholder="Любые данные..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyPress={(e) => handleKeyPress(e, handleSearchByData)}
+                placeholder="Введите ключ БццццБ"
+                value={searchKeyInput}
+                onChange={(e) => setSearchKeyInput(e.target.value.toUpperCase())}
+                onKeyPress={(e) => handleKeyPress(e, handleSearchByKey)}
+                maxLength={6}
               />
             </div>
             
             <button 
               className={styles.buttonFillArray} 
-              onClick={handleSearchByData}
+              onClick={handleSearchByKey}
               disabled={isLoading}
             >
-              {isLoading ? 'Поиск...' : 'Найти по данным'}
+              {isLoading ? 'Поиск...' : 'Найти по ключу'}
             </button>
 
             <div className={styles.taskInput}>
@@ -348,30 +479,42 @@ const AlgLab4 = () => {
             </button>
           </div>
 
-          {/* Блок управления файлами */}
+          {/* Блок удаления и управления */}
           <div className={styles.inputGroup}>
+            <div className={styles.taskInput}>
+              <label>Удалить по ключу: </label>
+              <input
+                type="text"
+                placeholder="Введите ключ БццццБ"
+                value={keyInput}
+                onChange={(e) => setKeyInput(e.target.value.toUpperCase())}
+                onKeyPress={(e) => handleKeyPress(e, handleRemoveByKey)}
+                maxLength={6}
+              />
+            </div>
+            
+            <button 
+              className={styles.stopButton} 
+              onClick={handleRemoveByKey}
+              disabled={isLoading}
+            >
+              Удалить по ключу
+            </button>
+
             <button 
               className={styles.buttonFillArray} 
               onClick={handleExportToFile}
               disabled={isLoading}
             >
-              {isLoading ? 'Экспорт...' : 'Экспорт в CSV'}
+              {isLoading ? 'Экспорт...' : 'Экспорт гистограммы'}
             </button>
-            
-            <input
-              type="file"
-              accept=".csv,.txt"
-              onChange={handleImportFromFile}
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-            />
             
             <button 
               className={styles.actionButton}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={handleBulkGenerate}
               disabled={isLoading}
             >
-              Импорт из файла
+              Сгенерировать 2000 элементов
             </button>
             
             <button 
@@ -381,6 +524,19 @@ const AlgLab4 = () => {
               Сброс таблицы
             </button>
           </div>
+
+                    {/* Сообщения системы */}
+          {message && (
+            <div className={styles.result}>
+              <span className={styles.resultText}>Состояние системы</span>
+              <div className={styles.resultContent}>
+                {message.split('\n').map((line, index) => (
+                  <div key={index}>{line}</div>
+                ))}
+              </div>
+            </div>
+          )}
+
 
           {/* Визуализация хеш-таблицы */}
           <div className={styles.hashVisualization}>
@@ -396,7 +552,7 @@ const AlgLab4 = () => {
                 <div className={styles.tableHeader}>
                   <span>Сегмент</span>
                   <span>Количество</span>
-                  <span>Данные → Ключ</span>
+                  <span>Ключ → Значение</span>
                 </div>
                 <div className={styles.tableContent}>
                   {tableItems.map((segmentInfo) => (
@@ -413,9 +569,9 @@ const AlgLab4 = () => {
                         {segmentInfo.count > 0 ? (
                           segmentInfo.items.map((item, itemIndex) => (
                             <div key={itemIndex} className={styles.dataItem}>
-                              <span className={styles.originalData}>"{item.originalData}"</span>
-                              <span className={styles.arrow}>→</span>
                               <span className={styles.generatedKey}>{item.key}</span>
+                              <span className={styles.arrow}>→</span>
+                              <span className={styles.originalData}>"{item.value}"</span>
                             </div>
                           ))
                         ) : (
@@ -429,25 +585,17 @@ const AlgLab4 = () => {
             </div>
           </div>
 
-          {/* Сообщения системы */}
-          {message && (
-            <div className={styles.result}>
-              <span className={styles.resultText}>Состояние системы</span>
-              <div className={styles.resultContent}>
-                {message}
-              </div>
-            </div>
-          )}
 
           {/* Информация о системе */}
           <div className={styles.result}>
             <span className={styles.resultText}>Информация о системе</span>
             <div className={styles.resultContent}>
-              <strong>Процесс работы:</strong> Данные → Ключ (БццццБ) → Хеш → Сегмент<br/>
-              <strong>Метод хеширования:</strong> Открытое хеширование (цепочки)<br/>
               <strong>Формат ключа:</strong> БццццБ (Буква+4 цифры+Буква)<br/>
+              <strong>Примеры ключей:</strong> A1234Z, B5678X, C9012Y<br/>
+              <strong>Метод хеширования:</strong> Открытое хеширование (цепочки)<br/>
               <strong>Количество сегментов:</strong> {stats.totalSegments || 1500}<br/>
-              <strong>Функции:</strong> добавление, удаление, поиск, экспорт/импорт
+              <strong>Макс. длина цепочки:</strong> {stats.MAX_CHAIN_LENGTH || 5}<br/>
+              <strong>Функции:</strong> автоматическое шифрование значений, ручное указание ключей, поиск, удаление, экспорт гистограммы
             </div>
           </div>
         </div>

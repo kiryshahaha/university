@@ -284,6 +284,12 @@
     font-size: 0.9rem;
 }
 
+.encryptedKey{
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
 .moreSegments {
     text-align: center;
     padding: 20px;
