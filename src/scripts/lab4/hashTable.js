@@ -1,9 +1,9 @@
 export class HashTable {
   constructor(segments = 1500) {
     this.segments = segments;
-    this.table = Array(segments).fill(null).map(() => []);
+    this.table = Array(segments).fill(null);
     this.elementCount = 0;
-    this.MAX_CHAIN_LENGTH = 50; // Максимальная длина цепочки для контроля переполнения
+    this.MAX_CHAIN_LENGTH = 50;
   }
 
   // Валидация формата ключа: БццццБ
@@ -38,25 +38,30 @@ export class HashTable {
     }
     
     const hash = this.calculateHash(key);
-    const segment = this.table[hash];
-    
+    let currentNode = this.table[hash];
+    let chainLength = 0;
+
+    // Проверка существования ключа и подсчет длины цепочки
+    while (currentNode !== null) {
+      chainLength++;
+      if (currentNode.key === key) {
+        // Обновление существующего элемента
+        currentNode.value = value;
+        return { key, hash, operation: 'updated' };
+      }
+      currentNode = currentNode.next;
+    }
+
     // Проверка переполнения
-    if (segment.length >= this.MAX_CHAIN_LENGTH) {
+    if (chainLength >= this.MAX_CHAIN_LENGTH) {
       throw new Error(`Переполнение сегмента ${hash}. Максимальная длина цепочки: ${this.MAX_CHAIN_LENGTH}`);
     }
-    
-    // Проверка существования ключа
-    const existingIndex = segment.findIndex(item => item.key === key);
-    if (existingIndex !== -1) {
-      // Обновление существующего элемента
-      segment[existingIndex].value = value;
-      return { key, hash, operation: 'updated' };
-    } else {
-      // Добавление нового элемента
-      segment.push({ key, value });
-      this.elementCount++;
-      return { key, hash, operation: 'added' };
-    }
+
+    // Добавление нового элемента в начало списка
+    const newNode = new Node(key, value, this.table[hash]);
+    this.table[hash] = newNode;
+    this.elementCount++;
+    return { key, hash, operation: 'added' };
   }
 
   // Поиск по ключу
@@ -66,9 +71,16 @@ export class HashTable {
     }
     
     const hash = this.calculateHash(key);
-    const segment = this.table[hash];
-    
-    const foundItems = segment.filter(item => item.key === key);
+    let currentNode = this.table[hash];
+    const foundItems = [];
+
+    while (currentNode !== null) {
+      if (currentNode.key === key) {
+        foundItems.push({ key: currentNode.key, value: currentNode.value });
+      }
+      currentNode = currentNode.next;
+    }
+
     return {
       key,
       hash,
@@ -83,10 +95,18 @@ export class HashTable {
       throw new Error(`Неверный индекс сегмента: ${segmentIndex}`);
     }
     
+    const items = [];
+    let currentNode = this.table[segmentIndex];
+    
+    while (currentNode !== null) {
+      items.push({ key: currentNode.key, value: currentNode.value });
+      currentNode = currentNode.next;
+    }
+    
     return {
       segment: segmentIndex,
-      items: [...this.table[segmentIndex]],
-      count: this.table[segmentIndex].length
+      items: items,
+      count: items.length
     };
   }
 
@@ -97,32 +117,41 @@ export class HashTable {
     }
     
     const hash = this.calculateHash(key);
-    const segment = this.table[hash];
-    
-    const initialLength = segment.length;
-    this.table[hash] = segment.filter(item => item.key !== key);
-    const removedCount = initialLength - this.table[hash].length;
-    
-    if (removedCount > 0) {
-      this.elementCount -= removedCount;
-      
-      // Возвращаем информацию об оставшихся элементах (коллизиях)
-      const remainingItems = this.table[hash];
-      return {
-        key,
-        hash,
-        removed: removedCount,
-        remainingItems: remainingItems,
-        remainingCount: remainingItems.length
-      };
+    let currentNode = this.table[hash];
+    let prevNode = null;
+    let removedCount = 0;
+
+    while (currentNode !== null) {
+      if (currentNode.key === key) {
+        // Удаление узла
+        if (prevNode === null) {
+          // Удаление первого узла
+          this.table[hash] = currentNode.next;
+        } else {
+          prevNode.next = currentNode.next;
+        }
+        removedCount++;
+        this.elementCount--;
+      } else {
+        prevNode = currentNode;
+      }
+      currentNode = currentNode.next;
     }
-    
+
+    // Получаем оставшиеся элементы после удаления
+    const remainingItems = [];
+    let remainingNode = this.table[hash];
+    while (remainingNode !== null) {
+      remainingItems.push({ key: remainingNode.key, value: remainingNode.value });
+      remainingNode = remainingNode.next;
+    }
+
     return {
       key,
       hash,
-      removed: 0,
-      remainingItems: [],
-      remainingCount: 0
+      removed: removedCount,
+      remainingItems: remainingItems,
+      remainingCount: remainingItems.length
     };
   }
 
@@ -166,62 +195,81 @@ export class HashTable {
   }
 
   generateKeyFromText(text) {
-  const strData = String(text);
-  let hash = 0;
-  
-  // Вычисляем хеш от данных для детерминированности
-  for (let i = 0; i < strData.length; i++) {
-    hash = ((hash << 5) - hash) + strData.charCodeAt(i);
-    hash |= 0;
+    const strData = String(text);
+    let hash = 0;
+    
+    for (let i = 0; i < strData.length; i++) {
+      hash = ((hash << 5) - hash) + strData.charCodeAt(i);
+      hash |= 0;
+    }
+    
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    
+    const absHash = Math.abs(hash);
+    
+    // Первая буква
+    const firstLetter = letters[absHash % letters.length];
+    
+    // 4 цифры
+    let fourDigits = '';
+    for (let i = 0; i < 4; i++) {
+      const digitIndex = ((absHash * (i + 1) * 7) % numbers.length);
+      fourDigits += numbers[digitIndex];
+    }
+    
+    // Последняя буква
+    const lastLetterIndex = ((absHash * 17) % letters.length);
+    const lastLetter = letters[lastLetterIndex];
+    
+    const generatedKey = firstLetter + fourDigits + lastLetter;
+    
+    if (!this.validateKey(generatedKey)) {
+      throw new Error('Ошибка генерации ключа');
+    }
+    
+    return generatedKey;
   }
-  
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  const numbers = '0123456789';
-  
-  const absHash = Math.abs(hash);
-  
-  // Первая буква
-  const firstLetter = letters[absHash % letters.length];
-  
-  // 4 цифры
-  let fourDigits = '';
-  for (let i = 0; i < 4; i++) {
-    const digitIndex = ((absHash * (i + 1) * 7) % numbers.length);
-    fourDigits += numbers[digitIndex];
-  }
-  
-  // Последняя буква
-  const lastLetterIndex = ((absHash * 17) % letters.length);
-  const lastLetter = letters[lastLetterIndex];
-  
-  const generatedKey = firstLetter + fourDigits + lastLetter;
-  
-  // Проверяем, что сгенерированный ключ соответствует формату
-  if (!this.validateKey(generatedKey)) {
-    throw new Error('Ошибка генерации ключа');
-  }
-  
-  return generatedKey;
-}
 
   // Получение статистики
   getStatistics() {
-    const segmentLengths = this.table.map(segment => segment.length);
-    const usedSegments = segmentLengths.filter(length => length > 0).length;
-    const maxChainLength = Math.max(...segmentLengths);
-    const emptySegments = this.segments - usedSegments;
-    
-    // Распределение по длинам цепочек
+    let usedSegments = 0;
+    let maxChainLength = 0;
     const chainDistribution = {};
+
+    // Инициализация распределения цепочек
     for (let i = 0; i <= this.MAX_CHAIN_LENGTH; i++) {
-      chainDistribution[i] = segmentLengths.filter(len => len === i).length;
+      chainDistribution[i] = 0;
     }
-    
+
+    // Обход всех сегментов для сбора статистики
+    for (let i = 0; i < this.segments; i++) {
+      let chainLength = 0;
+      let currentNode = this.table[i];
+
+      // Подсчет длины цепочки для текущего сегмента
+      while (currentNode !== null) {
+        chainLength++;
+        currentNode = currentNode.next;
+      }
+
+      // Обновление статистики
+      if (chainLength > 0) {
+        usedSegments++;
+      }
+      if (chainLength > maxChainLength) {
+        maxChainLength = chainLength;
+      }
+      chainDistribution[chainLength]++;
+    }
+
+    const emptySegments = this.segments - usedSegments;
+
     return {
       totalElements: this.elementCount,
       usedSegments,
       emptySegments,
-      maxChainLength: maxChainLength > -Infinity ? maxChainLength : 0,
+      maxChainLength,
       loadFactor: ((usedSegments / this.segments) * 100).toFixed(1),
       totalSegments: this.segments,
       chainDistribution,
@@ -230,36 +278,63 @@ export class HashTable {
   }
 
   // Экспорт для гистограммы (только длины цепочек)
-exportForHistogram() {
-  const data = this.table.map((segment, index) => ({
-    segment: index,
-    chainLength: segment.length
-  }));
-  
-  // Используем точку с запятой как разделитель
-  const csv = 'Segment;ChainLength\n' + 
-              data.map(item => `${item.segment};${item.chainLength}`).join('\n');
-  
-  return csv;
-}
+  exportForHistogram() {
+    const data = [];
+    
+    for (let i = 0; i < this.segments; i++) {
+      let chainLength = 0;
+      let currentNode = this.table[i];
+      
+      while (currentNode !== null) {
+        chainLength++;
+        currentNode = currentNode.next;
+      }
+      
+      data.push({
+        segment: i,
+        chainLength: chainLength
+      });
+    }
+    
+    const csv = 'Segment;ChainLength\n' + 
+                data.map(item => `${item.segment};${item.chainLength}`).join('\n');
+    
+    return csv;
+  }
 
-  // Остальные методы остаются аналогичными...
   reset() {
-    this.table = Array(this.segments).fill(null).map(() => []);
+    this.table = Array(this.segments).fill(null);
     this.elementCount = 0;
   }
 
   getAllItems(limit = 20) {
     const items = [];
     for (let i = 0; i < Math.min(this.table.length, limit); i++) {
+      const segmentItems = [];
+      let currentNode = this.table[i];
+      
+      while (currentNode !== null) {
+        segmentItems.push({ key: currentNode.key, value: currentNode.value });
+        currentNode = currentNode.next;
+      }
+      
       items.push({
         segment: i,
-        items: [...this.table[i]],
-        count: this.table[i].length
+        items: segmentItems,
+        count: segmentItems.length
       });
     }
     return items;
   }
 }
 
-export const createHashTable = (segments = 1500) => new HashTable(segments);
+// Вспомогательный класс для узла связного списка
+class Node {
+  constructor(key, value, next = null) {
+    this.key = key;
+    this.value = value;
+    this.next = next;
+  }
+}
+
+export const createHashTable = (segments = 1500) => new HashTable(segments);  

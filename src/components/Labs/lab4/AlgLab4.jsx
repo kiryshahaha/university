@@ -26,15 +26,8 @@ const AlgLab4 = () => {
   }, [])
 
   const updateDisplay = () => {
-    const allItems = []
-    for (let i = 0; i < 1500; i++) {
-      const segment = hashTable.table[i] || []
-      allItems.push({
-        segment: i,
-        items: [...segment],
-        count: segment.length
-      })
-    }
+    // Используем getAllItems для получения всех элементов таблицы
+    const allItems = hashTable.getAllItems(1500)
     setTableItems(allItems)
     setStats(hashTable.getStatistics())
   }
@@ -257,7 +250,7 @@ const AlgLab4 = () => {
     setIsLoading(true)
     setTimeout(() => {
       try {
-        const result = hashTable.bulkAdd(2000) // Генерируем 100 элементов
+        const result = hashTable.bulkAdd(2000) // Генерируем 2000 элементов
         setMessage(`✅ Сгенерировано: добавлено ${result.added}, обновлено ${result.updated}. Ошибок: ${result.errors.length}`)
         
         if (result.errors.length > 0) {
@@ -303,7 +296,7 @@ const AlgLab4 = () => {
         <p>
           <strong>Формат ключа:</strong> БццццБ (Буква+4 цифры+Буква)<br/>
           <strong>Количество сегментов:</strong> 1500<br/>
-          <strong>Метод разрешения коллизий:</strong> Открытое хеширование (цепочки)
+          <strong>Метод разрешения коллизий:</strong> Открытое хеширование (цепочки) через связные списки
         </p>
 
         <div className={styles.mainGroup}>
@@ -358,7 +351,7 @@ const AlgLab4 = () => {
           {/* Статистика системы */}
           <div className={styles.systemStats}>
             <div className={styles.statItem}>
-              <div className={styles.statValue}>{stats.totalElements || 0}</div>
+              <div className={styles.statValue}>{stats.totalElements + 1 || 0}</div>
               <div className={styles.statLabel}>Всего элементов</div>
             </div>
             <div className={styles.statItem}>
@@ -525,7 +518,7 @@ const AlgLab4 = () => {
             </button>
           </div>
 
-                    {/* Сообщения системы */}
+          {/* Сообщения системы */}
           {message && (
             <div className={styles.result}>
               <span className={styles.resultText}>Состояние системы</span>
@@ -536,7 +529,6 @@ const AlgLab4 = () => {
               </div>
             </div>
           )}
-
 
           {/* Визуализация хеш-таблицы */}
           <div className={styles.hashVisualization}>
@@ -585,16 +577,15 @@ const AlgLab4 = () => {
             </div>
           </div>
 
-
           {/* Информация о системе */}
           <div className={styles.result}>
             <span className={styles.resultText}>Информация о системе</span>
             <div className={styles.resultContent}>
               <strong>Формат ключа:</strong> БццццБ (Буква+4 цифры+Буква)<br/>
               <strong>Примеры ключей:</strong> A1234Z, B5678X, C9012Y<br/>
-              <strong>Метод хеширования:</strong> Открытое хеширование (цепочки)<br/>
+              <strong>Метод хеширования:</strong> Открытое хеширование (цепочки через связные списки)<br/>
               <strong>Количество сегментов:</strong> {stats.totalSegments || 1500}<br/>
-              <strong>Макс. длина цепочки:</strong> {stats.MAX_CHAIN_LENGTH || 5}<br/>
+              <strong>Макс. длина цепочки:</strong> {stats.MAX_CHAIN_LENGTH || 50}<br/>
               <strong>Функции:</strong> автоматическое шифрование значений, ручное указание ключей, поиск, удаление, экспорт гистограммы
             </div>
           </div>
