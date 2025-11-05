@@ -2,14 +2,14 @@ import AlgLab1 from './Lab1/AlgLab1'
 import AlgLab2 from './Lab2/AlgLab2'
 import AlgLab3 from './Lab3/AlgLab3'
 import AlgLab4 from './lab4/AlgLab4'
+import AlgLab5 from './Lab5/AlgLab5'
 
 export const labComponents = {
   '1-1': AlgLab1,
-  // Остальные лабораторные по алгоритмам будут добавлены позже
   '1-2': AlgLab2,
   '1-3': AlgLab3,
   '1-4': AlgLab4,
-  '1-5': () => <div>Лабораторная работа 5 по Алгоритмам (в разработке)</div>,
+  '1-5': AlgLab5,
   '1-6': () => <div>Лабораторная работа 6 по Алгоритмам (в разработке)</div>,
   '1-7': () => <div>Лабораторная работа 7 по Алгоритмам (в разработке)</div>,
   
